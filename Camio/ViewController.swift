@@ -23,7 +23,7 @@ class ViewController: UIViewController {
     private let shutterbutton : UIButton={
         let button = UIButton(frame: CGRect(x: 0,y: 0,width: 100,height: 100))
         button.layer.cornerRadius = 50
-        button.layer.borderWidth = 10
+        button.layer.borderWidth = 6
         button.layer.borderColor = UIColor.white.cgColor
         return button
     }()
@@ -70,24 +70,54 @@ class ViewController: UIViewController {
         switch AVCaptureDevice.authorizationStatus(for: .video){
         case .notDetermined:
             //request
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                guard granted else{
-                    return
-                }
-//                DispatchQueue.main.async {
-                    self?.setupCamera()
-//                }
-            }
+            askCameraPermission()
             break
         case .restricted:
+            print("restricted")
+            alertCameraAccessNeeded()
             break
         case .denied:
+            print("denied")
+            alertCameraAccessNeeded()
             break
         case .authorized:
             setupCamera()
             break
         @unknown default :
+            print("default")
             break
+        }
+    }
+    
+    private func alertCameraAccessNeeded()
+    {
+        let settingsAppURL = URL(string: UIApplication.openSettingsURLString)!
+
+        let alert = UIAlertController(
+            title: "Need Camera Access",
+            message: "Camera access is required to make full use of this app.",
+            preferredStyle: UIAlertController.Style.alert
+        )
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler: nil))
+        alert.addAction(UIAlertAction(title: "Allow Camera", style: .cancel, handler: { (alert) -> Void in
+            UIApplication.shared.open(settingsAppURL, options: [:], completionHandler: nil)
+        }))
+        DispatchQueue.main.async { [weak self] in
+            self?.present(alert, animated: true, completion: nil)
+        }
+    }
+    
+    private func askCameraPermission()
+    {
+        AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+            guard granted else{
+                print("not granted")
+                return
+            }
+//                DispatchQueue.main.async {
+                self?.setupCamera()
+//                }
         }
     }
     
